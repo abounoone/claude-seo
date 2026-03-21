@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "bitrix24": {
+      "command": "node",
+      "args": ["/path/to/bitrix24-mcp-server/build/index.js"],
+      "env": {
+        "BITRIX24_WEBHOOK_URL": "https://your-domain.bitrix24.ru/rest/1/your_webhook_token/"
+      },
+      "_comment": "Replace /path/to/ with actual path. Keep webhook URL secret — never commit to git."
+    }
+  }
+}
