@@ -179,3 +179,80 @@ grep -rn "OnBeforeMailSend\|EVENT_NAME.*SALE" \
 2. [Second priority]
 ...
 ```
+
+## Web Mode (URL input — no SSH access)
+
+Use WebFetch to detect e-commerce signals from live HTML and page structure.
+
+**Detection methods:**
+
+1. **Online store presence** — fetch homepage and catalog URLs:
+   - `/catalog/`, `/shop/`, `/products/` in navigation links
+   - `<!-- Component: bitrix:catalog.section -->` or `bitrix:catalog.element` in HTML comments
+   - Cart link: `/basket/`, `/cart/`, `/order/`
+
+2. **BX.Sale JavaScript signals** — search page source for:
+   - `BX.Sale` → sale module active
+   - `BX.Sale.BasketComponent` → basket component present
+   - `BX.Catalog` → catalog JS active
+   - `addToBasket` / `basketAction` function calls
+
+3. **Payment provider scripts** — look for external JS includes:
+   - `yookassa.ru` or `money.yandex.ru` → YooKassa
+   - `securepay.tinkoff.ru` → Tinkoff
+   - `ecommerce.sberbank.ru` → Sberbank Acquiring
+   - `robokassa.ru` → Robokassa
+   - `paymaster.ru` → PayMaster
+
+4. **1C integration signals** — look in HTML/JS for:
+   - GUID-format strings (e.g. `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) in product data
+   - `XML_ID` attribute in product JSON or data attributes → 1C origin
+   - `CommerceML` references
+
+5. **Structured data (JSON-LD)** — fetch a product page and look for:
+   - `"@type": "Product"` with `offers`, `price`, `sku`
+   - `"@type": "BreadcrumbList"` → category navigation
+   - `"@type": "Organization"` with payment/delivery info
+
+6. **Sitemap e-commerce signals** — fetch `<url>/sitemap.xml`:
+   - Count `/catalog/` URLs → product catalog size estimate
+   - Presence of product detail pages
+
+**Web Output:**
+```
+### E-commerce Detection (web mode)
+
+#### Store Presence
+- Catalog detected: [Yes/No — evidence]
+- Basket/Cart: [Yes/No — URL found]
+- Checkout flow: [Detected/Not found]
+
+#### BX.Sale Signals
+- BX.Sale JS: [Found/Not found]
+- Basket component: [Found/Not found]
+
+#### Payment Providers Detected
+| Provider | Evidence | Script Domain |
+[table or NONE DETECTED]
+
+#### 1C Integration Signals
+- GUID-format IDs in products: [Yes/No]
+- XML_ID attributes: [Yes/No]
+
+#### Structured Data
+| Schema Type | Found | Notes |
+|-------------|-------|-------|
+| Product | [Yes/No] | |
+| BreadcrumbList | [Yes/No] | |
+| Organization | [Yes/No] | |
+
+#### Catalog Size Estimate
+- Sitemap product URLs: [N or NOT FOUND]
+
+### SSH-only e-commerce checks
+- Payment system module config: requires SSH
+- Delivery service configuration: requires SSH
+- 1C exchange files and schedule: requires SSH
+- Custom discount handlers: requires SSH
+- Order event handlers: requires SSH
+```

@@ -76,3 +76,48 @@ Total installed: [N] standard + [N] custom + [N] marketplace
 🟡 Warnings: [list]
 🟢 Good: [list]
 ```
+
+## Web Mode (URL input — no SSH access)
+
+Use WebFetch to detect active modules and third-party integrations from live HTML.
+
+**Detection methods:**
+
+1. **HTML component comments** — Bitrix outputs debug comments:
+   - `<!-- Component: bitrix:catalog.section -->` → catalog module
+   - `<!-- Component: bitrix:sale.basket.basket -->` → sale module
+   - `<!-- Component: bitrix:search.page -->` → search module
+
+2. **JS namespaces in page source**:
+   - `BX.Sale.*` → sale module active
+   - `BX.Iblock.*` → iblock module
+   - `BX.Search.*` → search module
+   - `BX.Subscribe.*` → subscribe module
+
+3. **URL and form patterns**:
+   - `/basket/` or `/cart/` → sale module
+   - Search form → search module
+   - Newsletter form → subscribe module
+
+4. **Third-party integrations** — external script sources:
+   - `mc.yandex.ru/metrika` → Yandex Metrika
+   - `googletagmanager.com` or `google-analytics.com` → GA/GTM
+   - `jivosite.com` → JivoSite chat
+   - `calltouch.ru` → Calltouch
+   - `roistat.com` → Roistat
+   - `vk.com/js` → VK pixel
+
+**Web Output:**
+```
+### Detected Modules (from HTML signals)
+| Module | Detection Evidence | Confidence |
+[table]
+
+### Third-party Integrations
+| Service | Purpose | Script domain |
+[table]
+
+### SSH-only checks
+- Module versions: requires SSH
+- /local/modules/ custom modules: requires SSH
+```

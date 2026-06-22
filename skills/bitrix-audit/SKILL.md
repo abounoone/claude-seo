@@ -20,7 +20,17 @@ allowed-tools:
 
 Performs a comprehensive audit of a 1C-Bitrix Site Management project by running 5 specialist agents in parallel, then synthesizing results into a unified report with actionable priorities.
 
-## Pre-flight Checks
+## Mode Detection
+
+Determine mode before doing anything:
+- Argument starts with `http://` or `https://` → **web-mode**
+- Argument has no `/` and looks like a domain (e.g. `studioslow.ru`) → **web-mode** (prepend `https://`)
+- Argument is a filesystem path (starts with `/` or `./`) → **local-mode**
+- No argument → try auto-detect local paths first; if not found, ask user
+
+---
+
+## Pre-flight Checks (local-mode only)
 
 1. Verify the provided path exists and is a Bitrix project:
    ```bash
@@ -43,7 +53,23 @@ Launch all 5 agents at the same time via Agent tool with `context: fork`:
 
 Pass the project root path to each agent as context.
 
-## Bitrix Health Score Calculation
+## Parallel Agents — Web Mode (URL input)
+
+No SSH access — use WebFetch. Launch all 5 agents simultaneously, passing the URL:
+
+| Agent | File | Web Focus |
+|-------|------|-----------|
+| Codebase | `agents/bitrix-codebase.md` | Bitrix detection, version signals, Composite Site markers |
+| Modules | `agents/bitrix-modules-agent.md` | Module detection from HTML comments and JS |
+| Security | `agents/bitrix-security-agent.md` | HTTP headers, admin panel exposure, robots.txt, SSL |
+| E-commerce | `agents/bitrix-ecommerce-agent.md` | Cart/catalog structure, payment scripts, 1C signals |
+| Database | `agents/bitrix-database-agent.md` | Skipped (needs SSH) → run performance check instead |
+
+**Web mode limitations** — note in report what cannot be checked without SSH:
+- `/local/lib/` thin-component discipline, sprint.migration, Redis `.settings.php` config,
+  `.gitignore` hygiene, PHPUnit tests, spl_autoload_register, infoblock count/structure
+
+
 
 After all agents complete, calculate the weighted score:
 

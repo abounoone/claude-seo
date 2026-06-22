@@ -97,3 +97,61 @@ Grep code for:
 ### Recommendations
 [Numbered improvement list]
 ```
+
+## Web Mode (URL input — no SSH access)
+
+Database structure is not accessible without SSH. Instead, run a **frontend performance check** as a proxy for caching/infrastructure health.
+
+**Performance signals via WebFetch:**
+
+1. **JS/CSS asset count** — count `<script src>` and `<link rel="stylesheet">` tags:
+   - > 10 unmerged JS files → no asset bundling, likely no CDN
+   - Combined/minified files (`.min.js`) → better configured
+
+2. **Render-blocking resources** — check for scripts in `<head>` without `async`/`defer`
+
+3. **Image optimization** — scan `<img>` tags:
+   - `src="*.webp"` or `src="*.avif"` → modern formats in use
+   - `loading="lazy"` attribute → lazy loading enabled
+   - Oversized images without `srcset` → not optimized
+
+4. **Composite Site detection** — look for:
+   - HTML comments: `<!--BX_COMPOSITE_START-->`, `<!--BX_COMPOSITE_END-->`
+   - `BX.Composite` in page JS → Composite Site enabled (strong caching signal)
+   - `setFrameMode` calls → dynamic frames configured
+
+5. **CDN signals** — check asset URLs:
+   - Assets served from `cdn.*` or external domain → CDN in use
+   - All assets from same domain → no CDN
+
+6. **HTTP compression** — look for compressed asset references or `br`/`gzip` encoding signals in page
+
+7. **Cache version strings** — asset URLs like `?v=1234567` or `?cache=` indicate cache-busting is configured
+
+**Web Output:**
+```
+### Performance / Infrastructure Check (web mode — replaces DB audit)
+
+#### Asset Loading
+- JS files: [N total, N merged]
+- CSS files: [N total, N merged]
+- Render-blocking scripts in <head>: [N]
+
+#### Image Optimization
+- WebP/AVIF usage: [Yes/No/Partial]
+- Lazy loading (loading=lazy): [Yes/No/Partial]
+- Responsive images (srcset): [Yes/No]
+
+#### Caching Infrastructure
+- Composite Site: [Enabled / Not detected]
+  - Evidence: [BX_COMPOSITE_START comments / BX.Composite JS / not found]
+- CDN: [Detected (domain) / Not detected]
+- Cache-busting on assets: [Yes (?v=...) / No]
+
+### SSH-only database checks
+- Infoblock count and structure: requires SSH
+- ORM DataManager entities: requires SSH
+- Custom SQL tables: requires SSH
+- Redis/Memcache cache backend: requires SSH (.settings.php)
+- Direct $DB->Query() usage: requires SSH
+```

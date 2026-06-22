@@ -139,3 +139,72 @@ echo | openssl s_client -connect localhost:443 2>/dev/null | openssl x509 -noout
 3. [Warning action]
 ...
 ```
+
+## Web Mode (URL input — no SSH access)
+
+Use WebFetch to check security signals from the live site and HTTP headers.
+
+**Detection methods:**
+
+1. **HTTPS enforcement** — fetch `http://` version of the URL:
+   - Redirects to `https://` → 🟢 enforced
+   - Returns HTTP 200 → 🔴 no redirect
+
+2. **Security headers** — check response headers in fetched HTML meta or header tags:
+   - `Strict-Transport-Security` (HSTS) → look for `<meta http-equiv="...">` or infer from redirect
+   - `X-Frame-Options` / `Content-Security-Policy` → look for meta tags
+   - Server header disclosure → look for server version strings in page
+
+3. **Admin panel exposure** — fetch `<url>/bitrix/admin/`:
+   - HTTP 401/403 → protected
+   - HTTP 200 (login form) → normal but note
+   - HTTP 200 with no redirect → check for extra protection
+
+4. **Sensitive file exposure** — try fetching:
+   - `<url>/bitrix/.settings.php` → should return 403/404
+   - `<url>/local/php_interface/dbconn.php` → should return 403/404
+   - `<url>/upload/` → should return 403/404
+
+5. **robots.txt security** — fetch `<url>/robots.txt`:
+   - `Disallow: /bitrix/admin/` → 🟢 admin hidden from indexing
+   - `Disallow: /upload/` → 🟢 uploads hidden
+   - Missing both → 🟡 warning
+
+6. **Server info disclosure** — look in HTML source:
+   - `X-Powered-By: PHP/X.X` in headers → flag PHP version exposed
+   - Bitrix version in static asset URLs: `core.js?v=21.800.0`
+
+**Web Output:**
+```
+### Security Check (web mode)
+
+#### HTTPS
+- HTTP→HTTPS redirect: [Yes/No]
+- HSTS detected: [Yes/No/Unknown]
+
+#### Admin Panel
+- /bitrix/admin/ access: [Login form / 403 Forbidden / Exposed]
+- Extra protection detected: [Yes/No/Unknown]
+
+#### Sensitive Files
+| File | HTTP Status | Risk |
+|------|-------------|------|
+| /bitrix/.settings.php | [status] | [OK/EXPOSED] |
+| /local/php_interface/dbconn.php | [status] | [OK/EXPOSED] |
+| /upload/ | [status] | [OK/EXPOSED] |
+
+#### robots.txt Security
+- Admin blocked: [Yes/No]
+- Upload blocked: [Yes/No]
+
+#### Information Disclosure
+- Bitrix version visible: [Yes (version) / No]
+- PHP version visible: [Yes/No]
+
+### SSH-only security checks
+- File permissions (chmod): requires SSH
+- World-writable files: requires SSH
+- PHP files in upload/: requires SSH
+- Git history for secrets: requires SSH
+- Proactive protection module status: requires SSH
+```

@@ -73,3 +73,51 @@ Report findings in this structure:
 ```
 
 Write summary to working output. Flag critical issues with 🔴, warnings with 🟡, good practices with 🟢.
+
+## Web Mode (URL input — no SSH access)
+
+When a URL is passed instead of a local path, use WebFetch to analyze the live site.
+
+**Checks via WebFetch:**
+
+1. **Bitrix detection** — fetch homepage and look for:
+   - `/bitrix/` paths in `<script src>` and `<link href>` tags
+   - `BX.ready`, `BX.message`, `BX.Composite` JS objects
+   - CSS classes prefixed `bx-` or IDs `bx_*`
+   - HTML comments: `<!-- Component: bitrix:... -->`
+
+2. **Version signals** — version strings in static asset URLs:
+   - Pattern: `core.js?v=21.800.0` — the number is the Bitrix version
+   - Try fetching `<url>/bitrix/js/main/core/core.js` — HTTP 200 confirms Bitrix
+
+3. **Template structure** — identify from CSS/JS paths:
+   - `/local/templates/<name>/` → custom template name
+   - `/bitrix/templates/<name>/` → standard template
+
+4. **Composite Site signals**:
+   - HTML comments: `<!--BX_COMPOSITE_START-->`, `<!--BX_COMPOSITE_END-->`
+   - JS: `BX.Composite` in page source
+   - `setFrameMode` / `bx-composite-frame` patterns
+
+5. **robots.txt** — fetch `<url>/robots.txt` and check:
+   - `/bitrix/admin/` in Disallow → 🟢 security OK
+   - Sitemap directive present
+
+**Web Output:**
+```
+### Bitrix Detection: [Confirmed / Uncertain]
+- Version estimate: [X.X or Unknown]
+- Template: [/local/templates/NAME/ or Unknown]
+
+### Composite Site: [Enabled / Not detected]
+- Evidence: [HTML comments found or not]
+
+### robots.txt
+- Admin blocked: [Yes/No]
+- Sitemap declared: [Yes — URL / No]
+
+### SSH-only checks (not available in web mode)
+- /local/lib/ thin-component structure: requires SSH
+- init.php autoloading: requires SSH
+- Git .gitignore: requires SSH
+```
